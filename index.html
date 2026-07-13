@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>notedrop</title>
+<meta name="description" content="A black page. Drop a note. It files itself.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='black'/><circle cx='50' cy='50' r='14' fill='white'/></svg>">
+<style>
+  :root {
+    --bg: #000;
+    --bg-soft: #0d0d0d;
+    --line: #1e1e1e;
+    --ink: #f2f2f2;
+    --ink-dim: #8a8a8a;
+    --ink-faint: #4a4a4a;
+    --accent: #e8e4d8;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+
+  .app { display: grid; grid-template-columns: 230px 1fr; height: 100dvh; }
+
+  /* ---------- sidebar ---------- */
+  aside {
+    border-right: 1px solid var(--line); padding: 1.2rem .9rem;
+    overflow-y: auto; background: var(--bg);
+  }
+  .brand { font-size: .8rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--ink-dim); margin: 0 0 1.2rem .5rem; display: flex; align-items: center; gap: .5rem; }
+  .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .catlist { display: flex; flex-direction: column; gap: 2px; }
+  .cat {
+    display: flex; align-items: center; gap: .5rem; width: 100%;
+    padding: .45rem .55rem; border-radius: 8px; color: var(--ink-dim);
+    font-size: .86rem; text-align: left; position: relative;
+  }
+  .cat:hover { background: var(--bg-soft); color: var(--ink); }
+  .cat.active { background: var(--bg-soft); color: var(--ink); }
+  .cat .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cat .count { font-size: .7rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .cat .menu-btn { opacity: 0; font-size: .9rem; color: var(--ink-faint); padding: 0 .2rem; }
+  .cat:hover .menu-btn { opacity: 1; }
+  .cat input.rename {
+    flex: 1; background: var(--bg-soft); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 6px; padding: .1rem .35rem; font: inherit; font-size: .86rem; min-width: 0;
+  }
+  .sidefoot { margin-top: 1.4rem; border-top: 1px solid var(--line); padding-top: .8rem; }
+  .sidefoot button { display: block; width: 100%; text-align: left; padding: .4rem .55rem;
+    border-radius: 8px; color: var(--ink-faint); font-size: .78rem; }
+  .sidefoot button:hover { color: var(--ink-dim); background: var(--bg-soft); }
+
+  /* ---------- main ---------- */
+  main { display: flex; flex-direction: column; overflow: hidden; }
+  .drop {
+    padding: 3.2rem 2rem 1.6rem; display: grid; place-items: center;
+  }
+  .drop form { width: min(640px, 100%); position: relative; }
+  .drop input {
+    width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--line);
+    color: var(--ink); font-size: 1.35rem; padding: .6rem .2rem .8rem;
+    outline: none; caret-color: var(--accent);
+  }
+  .drop input::placeholder { color: var(--ink-faint); }
+  .drop input:focus { border-bottom-color: var(--ink-dim); }
+  .drop .hint { position: absolute; right: .2rem; top: 100%; margin-top: .5rem;
+    font-size: .68rem; color: var(--ink-faint); }
+
+  .viewhead { padding: .4rem 2rem .6rem; max-width: 720px; width: 100%; margin: 0 auto;
+    display: flex; align-items: baseline; gap: .8rem; }
+  .viewhead h2 { margin: 0; font-size: .8rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-dim); font-weight: 500; }
+  .viewhead .n { font-size: .7rem; color: var(--ink-faint); }
+
+  .items { flex: 1; overflow-y: auto; padding: 0 2rem 3rem; }
+  .items-inner { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; }
+  .item {
+    display: flex; align-items: center; gap: .8rem; padding: .7rem .2rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .item .check {
+    width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--ink-faint);
+    flex: none; display: grid; place-items: center; transition: all .15s;
+  }
+  .item .check:hover { border-color: var(--accent); }
+  .item.done .check { background: var(--accent); border-color: var(--accent); }
+  .item.done .check::after { content: "✓"; font-size: .7rem; color: #000; }
+  .item .text { flex: 1; font-size: .95rem; overflow-wrap: anywhere; }
+  .item.done .text { color: var(--ink-faint); text-decoration: line-through; }
+  .item .tag { font-size: .66rem; color: var(--ink-faint); border: 1px solid var(--line);
+    border-radius: 999px; padding: .1rem .55rem; white-space: nowrap; cursor: pointer; }
+  .item .tag:hover { color: var(--ink-dim); border-color: var(--ink-faint); }
+  .item .del { opacity: 0; color: var(--ink-faint); font-size: 1rem; padding: 0 .2rem; }
+  .item:hover .del { opacity: 1; }
+  .item .del:hover { color: #c66; }
+  .empty { color: var(--ink-faint); font-size: .85rem; text-align: center; padding: 3rem 0; }
+
+  /* ---------- toast ---------- */
+  #toast {
+    position: fixed; bottom: 1.4rem; left: 50%; transform: translate(-50%, 8px);
+    background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px;
+    padding: .55rem .9rem; font-size: .8rem; color: var(--ink-dim);
+    display: flex; align-items: center; gap: .6rem; opacity: 0; pointer-events: none;
+    transition: opacity .25s, transform .25s; max-width: 90vw;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  #toast b { color: var(--ink); font-weight: 600; }
+  #toast select {
+    background: var(--bg); color: var(--ink-dim); border: 1px solid var(--line);
+    border-radius: 6px; font-size: .74rem; padding: .15rem .3rem;
+  }
+
+  /* ---------- popover menu ---------- */
+  #pop {
+    position: fixed; z-index: 30; background: var(--bg-soft); border: 1px solid var(--line);
+    border-radius: 10px; padding: .3rem; min-width: 160px; display: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,.6); font-size: .82rem;
+  }
+  #pop button, #pop select { display: block; width: 100%; text-align: left; padding: .45rem .6rem;
+    border-radius: 7px; color: var(--ink-dim); }
+  #pop button:hover { background: #161616; color: var(--ink); }
+  #pop .danger:hover { color: #c66; }
+  #pop select { background: var(--bg); border: 1px solid var(--line); margin-top: .2rem;
+    font-size: .78rem; }
+  #pop .lbl { font-size: .66rem; color: var(--ink-faint); padding: .35rem .6rem 0; }
+
+  /* ---------- settings modal ---------- */
+  #settings {
+    position: fixed; inset: 0; background: rgba(0,0,0,.7); display: none;
+    place-items: center; z-index: 40;
+  }
+  #settings.open { display: grid; }
+  #settings .box {
+    background: var(--bg-soft); border: 1px solid var(--line); border-radius: 14px;
+    padding: 1.4rem; width: min(420px, 92vw);
+  }
+  #settings h3 { margin: 0 0 .3rem; font-size: .95rem; }
+  #settings p { font-size: .76rem; color: var(--ink-dim); margin: .3rem 0 .9rem; }
+  #settings input {
+    width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+    color: var(--ink); padding: .55rem .7rem; font-size: .82rem; outline: none;
+  }
+  #settings .row { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1rem; }
+  #settings .row button { font-size: .8rem; padding: .45rem .9rem; border-radius: 8px;
+    color: var(--ink-dim); }
+  #settings .row .primary { background: var(--accent); color: #000; }
+
+  /* ---------- mobile ---------- */
+  @media (max-width: 640px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    aside { border-right: none; border-bottom: 1px solid var(--line);
+      padding: .7rem .8rem; overflow-x: auto; }
+    .brand { display: none; }
+    .catlist { flex-direction: row; }
+    .cat { white-space: nowrap; }
+    .cat .menu-btn { display: none; }
+    .sidefoot { display: none; }
+    .drop { padding: 1.6rem 1.2rem 1rem; }
+    .items { padding: 0 1.2rem 2rem; }
+    .viewhead { padding: .3rem 1.2rem .5rem; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <p class="brand"><span class="dot"></span>notedrop</p>
+    <nav class="catlist" id="catlist"></nav>
+    <div class="sidefoot">
+      <button id="open-settings">settings</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="drop">
+      <form id="dropform" autocomplete="off">
+        <input id="dropinput" type="text" placeholder="drop a note…" maxlength="300" autofocus>
+        <span class="hint" id="drophint">enter to file</span>
+      </form>
+    </div>
+    <div class="viewhead">
+      <h2 id="viewtitle">All</h2><span class="n" id="viewcount"></span>
+    </div>
+    <div class="items"><div class="items-inner" id="itemlist"></div></div>
+  </main>
+</div>
+
+<div id="toast"></div>
+<div id="pop"></div>
+
+<div id="settings">
+  <div class="box">
+    <h3>Smart classification</h3>
+    <p>Notes are auto-filed with a built-in classifier. Paste an Anthropic API key to use
+       Claude for much smarter filing. The key is stored only in this browser.</p>
+    <input id="apikey" type="password" placeholder="sk-ant-…">
+    <div class="row">
+      <button id="settings-close">close</button>
+      <button id="settings-save" class="primary">save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ---------- state ---------- */
+const LS = "notedrop.v1";
+const uid = () => Math.random().toString(36).slice(2, 10);
+const defaultState = () => ({
+  cats: [{ id: "inbox", name: "Inbox" }],
+  items: [],
+  apiKey: "",
+});
+let S = load();
+let view = "all"; // "all" | catId
+let toastTimer = null;
+
+function load() {
+  try {
+    const raw = localStorage.getItem(LS);
+    if (raw) { const s = JSON.parse(raw); if (s.cats && s.items) return s; }
+  } catch (e) {}
+  return defaultState();
+}
+function save() { localStorage.setItem(LS, JSON.stringify(S)); }
+
+const catById = (id) => S.cats.find(c => c.id === id);
+const catByName = (name) => S.cats.find(c => c.name.toLowerCase() === name.toLowerCase().trim());
+function ensureCat(name) {
+  let c = catByName(name);
+  if (!c) { c = { id: uid(), name: name.trim() }; S.cats.push(c); }
+  return c;
+}
+
+/* ---------- classification ---------- */
+const LEXICON = {
+  "Shopping":  ["buy","get","order","milk","bread","eggs","groceries","store","amazon","comprar","shampoo","batteries","gift"],
+  "Calls & Messages": ["call","phone","text","message","email","reply","contact","ring","whatsapp","ligar"],
+  "Work":      ["meeting","deadline","report","client","project","boss","presentation","review","invoice","slides","standup"],
+  "Ideas":     ["idea","maybe","what if","could","concept","someday","app","blog","write about"],
+  "Errands":   ["pick up","drop off","bank","post","package","dry cleaning","pharmacy","renew","appointment","dmv","passport"],
+  "Health":    ["gym","doctor","dentist","run","workout","vitamins","sleep","meditate","stretch","yoga"],
+  "Home":      ["fix","clean","laundry","dishes","plants","water","repair","trash","vacuum","garden","bulb"],
+};
+
+function localClassify(text) {
+  const t = " " + text.toLowerCase() + " ";
+  let best = null, bestScore = 0;
+  // existing categories: name match + overlap with their items' words
+  for (const c of S.cats) {
+    if (c.id === "inbox") continue;
+    let score = 0;
+    if (t.includes(c.name.toLowerCase())) score += 3;
+    const words = new Set(
+      S.items.filter(i => i.cat === c.id)
+        .flatMap(i => i.text.toLowerCase().split(/\W+/))
+        .filter(w => w.length > 3)
+    );
+    for (const w of t.split(/\W+/)) if (w.length > 3 && words.has(w)) score += 1;
+    if (score > bestScore) { bestScore = score; best = c.name; }
+  }
+  // lexicon
+  for (const [name, keys] of Object.entries(LEXICON)) {
+    let score = 0;
+    for (const k of keys) if (t.includes(" " + k)) score += 2;
+    if (score > bestScore) { bestScore = score; best = name; }
+  }
+  return bestScore >= 2 ? best : "Inbox";
+}
+
+async function aiClassify(text) {
+  const existing = S.cats.map(c => c.name).filter(n => n !== "Inbox");
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": S.apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model: "claude-opus-4-8",
+      max_tokens: 256,
+      output_config: {
+        format: {
+          type: "json_schema",
+          schema: {
+            type: "object",
+            properties: { category: { type: "string" } },
+            required: ["category"],
+            additionalProperties: false,
+          },
+        },
+      },
+      messages: [{
+        role: "user",
+        content:
+`You file short personal notes (todos, reminders, lists) into categories.
+
+Existing categories: ${existing.length ? existing.join(", ") : "(none yet)"}
+
+Note: "${text.replace(/"/g, "'")}"
+
+Rules:
+- Prefer an existing category when it fits.
+- Otherwise invent ONE short, broad, reusable category name (1-2 words, Title Case).
+- Never answer "Inbox" unless the note is truly unclassifiable.
+
+Return the category name.`,
+      }],
+    }),
+  });
+  if (!res.ok) throw new Error("api " + res.status);
+  const data = await res.json();
+  if (data.stop_reason === "refusal") throw new Error("refusal");
+  const block = (data.content || []).find(b => b.type === "text");
+  const name = JSON.parse(block.text).category.trim();
+  return name || "Inbox";
+}
+
+async function classify(text) {
+  if (S.apiKey) {
+    try { return await aiClassify(text); } catch (e) { /* fall through */ }
+  }
+  return localClassify(text);
+}
+
+/* ---------- actions ---------- */
+async function addNote(text) {
+  const item = { id: uid(), text, cat: "inbox", done: false, ts: Date.now() };
+  S.items.unshift(item); save(); render();
+  const hint = document.getElementById("drophint");
+  hint.textContent = S.apiKey ? "thinking…" : "filing…";
+  const name = await classify(text);
+  const cat = ensureCat(name);
+  item.cat = cat.id;
+  save(); render();
+  hint.textContent = "enter to file";
+  toastFiled(item);
+}
+
+function toggleDone(id) {
+  const it = S.items.find(i => i.id === id);
+  if (it) { it.done = !it.done; save(); render(); }
+}
+function deleteItem(id) {
+  S.items = S.items.filter(i => i.id !== id); save(); render();
+}
+function moveItem(id, catId) {
+  const it = S.items.find(i => i.id === id);
+  if (it) { it.cat = catId; save(); render(); }
+}
+function renameCat(id, name) {
+  const c = catById(id);
+  if (!c || !name.trim()) return;
+  const clash = catByName(name);
+  if (clash && clash.id !== id) { mergeCat(id, clash.id); return; }
+  c.name = name.trim(); save(); render();
+}
+function mergeCat(fromId, intoId) {
+  if (fromId === intoId) return;
+  for (const it of S.items) if (it.cat === fromId) it.cat = intoId;
+  S.cats = S.cats.filter(c => c.id !== fromId || c.id === "inbox");
+  if (fromId !== "inbox") S.cats = S.cats.filter(c => c.id !== fromId);
+  if (view === fromId) view = intoId;
+  save(); render();
+}
+function deleteCat(id) {
+  if (id === "inbox") return;
+  for (const it of S.items) if (it.cat === id) it.cat = "inbox";
+  S.cats = S.cats.filter(c => c.id !== id);
+  if (view === id) view = "all";
+  save(); render();
+}
+
+/* ---------- render ---------- */
+const esc = (s) => s.replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+
+function render() {
+  // sidebar
+  const counts = {};
+  for (const it of S.items) counts[it.cat] = (counts[it.cat] || 0) + (it.done ? 0 : 1);
+  const cl = document.getElementById("catlist");
+  const catBtn = (id, name, count, extra = "") =>
+    `<button class="cat ${view === id ? "active" : ""}" data-view="${id}">
+       <span class="name">${esc(name)}</span>
+       <span class="count">${count || ""}</span>${extra}
+     </button>`;
+  let html = catBtn("all", "All", S.items.filter(i => !i.done).length);
+  for (const c of S.cats) {
+    const menu = c.id === "inbox" ? "" : `<span class="menu-btn" data-menu="${c.id}">⋯</span>`;
+    html += catBtn(c.id, c.name, counts[c.id] || 0, menu);
+  }
+  cl.innerHTML = html;
+
+  // main list
+  const title = view === "all" ? "All" : (catById(view)?.name || "All");
+  document.getElementById("viewtitle").textContent = title;
+  const items = S.items
+    .filter(i => view === "all" || i.cat === view)
+    .sort((a, b) => (a.done - b.done) || (b.ts - a.ts));
+  document.getElementById("viewcount").textContent =
+    items.length ? `${items.filter(i => !i.done).length} open` : "";
+  const il = document.getElementById("itemlist");
+  if (!items.length) {
+    il.innerHTML = `<p class="empty">${view === "all" ? "nothing here yet — drop a note above" : "empty"}</p>`;
+    return;
+  }
+  il.innerHTML = items.map(i => `
+    <div class="item ${i.done ? "done" : ""}" data-id="${i.id}">
+      <button class="check" data-act="toggle" aria-label="toggle done"></button>
+      <span class="text">${esc(i.text)}</span>
+      ${view === "all" ? `<button class="tag" data-act="viewcat">${esc(catById(i.cat)?.name || "?")}</button>` : ""}
+      <button class="del" data-act="del" aria-label="delete">×</button>
+    </div>`).join("");
+}
+
+/* ---------- toast ---------- */
+function toastFiled(item) {
+  const t = document.getElementById("toast");
+  const opts = S.cats.map(c =>
+    `<option value="${c.id}" ${c.id === item.cat ? "selected" : ""}>${esc(c.name)}</option>`).join("");
+  t.innerHTML = `filed under <b>${esc(catById(item.cat)?.name || "?")}</b>
+    <select aria-label="move to category">${opts}</select>`;
+  t.querySelector("select").addEventListener("change", (e) => {
+    moveItem(item.id, e.target.value);
+    hideToast();
+  });
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, 5000);
+}
+function hideToast() { document.getElementById("toast").classList.remove("show"); }
+
+/* ---------- popover (category menu) ---------- */
+function openMenu(catId, x, y) {
+  const pop = document.getElementById("pop");
+  const others = S.cats.filter(c => c.id !== catId);
+  pop.innerHTML = `
+    <button data-pop="rename">Rename</button>
+    <div class="lbl">Merge into…</div>
+    <select data-pop="merge">
+      <option value="">choose category</option>
+      ${others.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}
+    </select>
+    <button data-pop="delete" class="danger">Delete (items → Inbox)</button>`;
+  pop.style.display = "block";
+  pop.style.left = Math.min(x, innerWidth - 190) + "px";
+  pop.style.top = Math.min(y, innerHeight - 160) + "px";
+  pop.dataset.cat = catId;
+}
+function closeMenu() { document.getElementById("pop").style.display = "none"; }
+
+function startRename(catId) {
+  const btn = document.querySelector(`.cat[data-view="${catId}"]`);
+  if (!btn) return;
+  const c = catById(catId);
+  btn.innerHTML = `<input class="rename" value="${esc(c.name)}">`;
+  const inp = btn.querySelector("input");
+  inp.focus(); inp.select();
+  const commit = () => renameCat(catId, inp.value);
+  inp.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") commit();
+    if (e.key === "Escape") render();
+    e.stopPropagation();
+  });
+  inp.addEventListener("blur", commit);
+}
+
+/* ---------- events ---------- */
+document.getElementById("dropform").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const inp = document.getElementById("dropinput");
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = "";
+  addNote(text);
+});
+
+document.getElementById("catlist").addEventListener("click", (e) => {
+  const menu = e.target.closest("[data-menu]");
+  if (menu) { e.stopPropagation(); openMenu(menu.dataset.menu, e.clientX, e.clientY); return; }
+  const btn = e.target.closest("[data-view]");
+  if (btn) { view = btn.dataset.view; render(); }
+});
+document.getElementById("catlist").addEventListener("dblclick", (e) => {
+  const btn = e.target.closest("[data-view]");
+  if (btn && btn.dataset.view !== "all" && btn.dataset.view !== "inbox") startRename(btn.dataset.view);
+});
+
+document.getElementById("itemlist").addEventListener("click", (e) => {
+  const row = e.target.closest(".item"); if (!row) return;
+  const act = e.target.closest("[data-act]")?.dataset.act;
+  const id = row.dataset.id;
+  if (act === "toggle") toggleDone(id);
+  else if (act === "del") deleteItem(id);
+  else if (act === "viewcat") { view = S.items.find(i => i.id === id)?.cat || "all"; render(); }
+});
+
+document.getElementById("pop").addEventListener("click", (e) => {
+  const catId = document.getElementById("pop").dataset.cat;
+  const act = e.target.closest("[data-pop]")?.dataset.pop;
+  if (act === "rename") { closeMenu(); startRename(catId); }
+  else if (act === "delete") { closeMenu(); deleteCat(catId); }
+});
+document.getElementById("pop").addEventListener("change", (e) => {
+  if (e.target.dataset.pop === "merge" && e.target.value) {
+    mergeCat(document.getElementById("pop").dataset.cat, e.target.value);
+    closeMenu();
+  }
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#pop") && !e.target.closest("[data-menu]")) closeMenu();
+});
+
+/* settings */
+const settings = document.getElementById("settings");
+document.getElementById("open-settings").addEventListener("click", () => {
+  document.getElementById("apikey").value = S.apiKey || "";
+  settings.classList.add("open");
+});
+document.getElementById("settings-close").addEventListener("click", () => settings.classList.remove("open"));
+document.getElementById("settings-save").addEventListener("click", () => {
+  S.apiKey = document.getElementById("apikey").value.trim();
+  save(); settings.classList.remove("open");
+});
+settings.addEventListener("click", (e) => { if (e.target === settings) settings.classList.remove("open"); });
+
+render();
+</script>
+</body>
+</html>
