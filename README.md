@@ -16,7 +16,7 @@ A radically simple reminder / list app:
 
 ## How classification works
 
-- **Built-in classifier** (default): keyword matching + similarity to notes already in your categories. Free, offline, instant.
+- **Built-in classifier** (default): a large dictionary (fruits/groceries → Shopping, dev & office vocabulary → Work, finance, travel, health, home, calls…), word stemming ("oranges" matches "orange"), similarity to notes already in your categories — **and it learns**: every time you re-file a note via the toast, those words are remembered for that category. Free, offline, instant, gets smarter with use.
 - **Claude-powered** (optional): open *settings* and paste an Anthropic API key. Notes are then classified by Claude (`claude-opus-4-8`), which picks an existing category or invents a fitting new one. The key is stored only in your browser's localStorage and sent only to Anthropic's API.
 
 ## Storage

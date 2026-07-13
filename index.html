@@ -217,6 +217,7 @@ const defaultState = () => ({
   cats: [{ id: "inbox", name: "Inbox" }],
   items: [],
   apiKey: "",
+  learned: {},   // stem -> { "Category Name": count } — built from user corrections
 });
 let S = load();
 let view = "all"; // "all" | catId
@@ -225,7 +226,7 @@ let toastTimer = null;
 function load() {
   try {
     const raw = localStorage.getItem(LS);
-    if (raw) { const s = JSON.parse(raw); if (s.cats && s.items) return s; }
+    if (raw) { const s = JSON.parse(raw); if (s.cats && s.items) { s.learned = s.learned || {}; return s; } }
   } catch (e) {}
   return defaultState();
 }
@@ -240,37 +241,126 @@ function ensureCat(name) {
 }
 
 /* ---------- classification ---------- */
+/* Built-in dictionary. Single words are matched by stem ("oranges" → "orange");
+   entries with spaces are matched as phrases. */
 const LEXICON = {
-  "Shopping":  ["buy","get","order","milk","bread","eggs","groceries","store","amazon","comprar","shampoo","batteries","gift"],
-  "Calls & Messages": ["call","phone","text","message","email","reply","contact","ring","whatsapp","ligar"],
-  "Work":      ["meeting","deadline","report","client","project","boss","presentation","review","invoice","slides","standup"],
-  "Ideas":     ["idea","maybe","what if","could","concept","someday","app","blog","write about"],
-  "Errands":   ["pick up","drop off","bank","post","package","dry cleaning","pharmacy","renew","appointment","dmv","passport"],
-  "Health":    ["gym","doctor","dentist","run","workout","vitamins","sleep","meditate","stretch","yoga"],
-  "Home":      ["fix","clean","laundry","dishes","plants","water","repair","trash","vacuum","garden","bulb"],
+  "Shopping": [
+    // verbs / signals
+    "buy","get","order","need","restock","grocery","groceries","shopping","supermarket","market","store","amazon","comprar",
+    // fruit
+    "orange","apple","banana","grape","lemon","lime","mango","strawberry","blueberry","raspberry","peach","pear",
+    "watermelon","melon","kiwi","pineapple","avocado","cherry","plum","fig","fruit",
+    // vegetables
+    "tomato","potato","onion","garlic","carrot","lettuce","spinach","broccoli","pepper","cucumber","zucchini",
+    "courgette","mushroom","corn","cabbage","celery","vegetable",
+    // staples & drinks
+    "milk","bread","egg","butter","cheese","yogurt","rice","pasta","flour","sugar","salt","oil","cereal",
+    "coffee","tea","juice","water bottle","beer","wine","chicken","beef","fish","salmon","ham","bacon","tuna","snack",
+    // household goods
+    "shampoo","soap","toothpaste","toothbrush","detergent","toilet paper","paper towel","batteries","battery",
+    "bulb","sponge","razor","deodorant","napkin","trash bag","gift","present",
+  ],
+  "Work": [
+    // dev / building things
+    "repository","repo","build","deploy","deployment","code","coding","commit","push","merge","branch",
+    "pull request","pr review","bug","fix the","feature","release","refactor","api","database","server",
+    "website","app","frontend","backend","github","staging","production","test","launch",
+    // office / business
+    "meeting","meet with","deadline","report","client","project","boss","colleague","presentation","review",
+    "invoice","slides","deck","standup","sprint","backlog","jira","notion","slack","proposal","contract",
+    "pitch","demo","interview","cv","resume","linkedin","hire","hiring","onboarding","offsite","okr","kpi",
+    // startup / vc flavor
+    "investor","funding","fundraise","term sheet","cap table","startup","vc","due diligence","board","quarterly",
+  ],
+  "Calls & Messages": [
+    "call","phone","text","message","email","reply","respond","contact","ring","whatsapp","telegram",
+    "voicemail","follow up with","ligar","write to","answer",
+  ],
+  "Finance": [
+    "pay","payment","bill","rent","tax","taxes","transfer","budget","subscription","cancel subscription",
+    "insurance","mortgage","loan","invoice from","refund","salary","expense","receipt","iban","utilities",
+  ],
+  "Travel": [
+    "flight","fly","hotel","airbnb","book","booking","trip","travel","pack","packing","passport","visa",
+    "train","ticket","itinerary","airport","luggage","suitcase","check in","vacation","holiday","weekend in",
+  ],
+  "Ideas": [
+    "idea","maybe","what if","could","concept","someday","brainstorm","blog","write about","research",
+    "look into","explore","think about","read about","watch","listen to","podcast","book about",
+  ],
+  "Errands": [
+    "pick up","drop off","post office","package","parcel","dry cleaning","pharmacy","renew","appointment",
+    "dmv","license","registration","return","exchange","key copy","car wash","mechanic","haircut","barber",
+  ],
+  "Health": [
+    "gym","doctor","dentist","run","running","workout","exercise","vitamins","sleep","meditate","stretch",
+    "yoga","therapy","therapist","checkup","blood test","prescription","medication","swim","walk","hike","diet",
+    "dentist appointment","doctor appointment","annual checkup",
+  ],
+  "Home": [
+    "fix","clean","laundry","dishes","plants","water the","repair","trash","vacuum","garden","lightbulb",
+    "paint","furniture","ikea","organize","declutter","closet","fridge","oven","leak","wifi router","curtains",
+  ],
 };
+
+// crude stemmer: oranges→orange, batteries→battery, dishes→dish, meetings→meeting
+function stem(w) {
+  if (w.length > 4 && w.endsWith("ies")) return w.slice(0, -3) + "y";
+  if (w.length > 4 && /(?:[sxz]|ch|sh)es$/.test(w)) return w.slice(0, -2);
+  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) return w.slice(0, -1);
+  return w;
+}
+const tokenize = (text) => text.toLowerCase().split(/[^a-zà-ÿ0-9]+/).filter(w => w.length > 2).map(stem);
+
+// pre-index the lexicon: stemmed single words and phrase lists per category
+const LEX_WORDS = {}, LEX_PHRASES = {};
+for (const [name, keys] of Object.entries(LEXICON)) {
+  LEX_WORDS[name] = new Set(); LEX_PHRASES[name] = [];
+  for (const k of keys) {
+    if (k.includes(" ")) LEX_PHRASES[name].push(k);
+    else LEX_WORDS[name].add(stem(k));
+  }
+}
+
+/* Learn from user corrections: these words belong to that category. */
+function learn(text, catId) {
+  const name = catById(catId)?.name; if (!name || catId === "inbox") return;
+  for (const w of tokenize(text)) {
+    S.learned[w] = S.learned[w] || {};
+    S.learned[w][name] = (S.learned[w][name] || 0) + 1;
+  }
+  save();
+}
 
 function localClassify(text) {
   const t = " " + text.toLowerCase() + " ";
-  let best = null, bestScore = 0;
-  // existing categories: name match + overlap with their items' words
+  const toks = tokenize(text);
+  const scores = {}; // category name -> score
+  const add = (name, n) => { scores[name] = (scores[name] || 0) + n; };
+
+  // 0. explicit "idea …" prefix is a strong Ideas signal
+  if (/^\s*ideas?\b/.test(text.toLowerCase())) add("Ideas", 5);
+  // 1. learned corrections — strongest signal (personal vocabulary)
+  for (const w of toks) {
+    const m = S.learned[w];
+    if (m) for (const [name, count] of Object.entries(m)) add(name, 4 * Math.min(count, 3));
+  }
+  // 2. built-in dictionary
+  for (const name of Object.keys(LEXICON)) {
+    for (const w of toks) if (LEX_WORDS[name].has(w)) add(name, 2);
+    for (const p of LEX_PHRASES[name]) if (t.includes(p)) add(name, 3);
+  }
+  // 3. existing categories: name mention + word overlap with their items
   for (const c of S.cats) {
     if (c.id === "inbox") continue;
-    let score = 0;
-    if (t.includes(c.name.toLowerCase())) score += 3;
-    const words = new Set(
-      S.items.filter(i => i.cat === c.id)
-        .flatMap(i => i.text.toLowerCase().split(/\W+/))
-        .filter(w => w.length > 3)
-    );
-    for (const w of t.split(/\W+/)) if (w.length > 3 && words.has(w)) score += 1;
-    if (score > bestScore) { bestScore = score; best = c.name; }
+    if (t.includes(c.name.toLowerCase())) add(c.name, 3);
+    const words = new Set(S.items.filter(i => i.cat === c.id).flatMap(i => tokenize(i.text)));
+    for (const w of toks) if (words.has(w)) add(c.name, 1);
   }
-  // lexicon
-  for (const [name, keys] of Object.entries(LEXICON)) {
-    let score = 0;
-    for (const k of keys) if (t.includes(" " + k)) score += 2;
-    if (score > bestScore) { bestScore = score; best = name; }
+
+  let best = null, bestScore = 0;
+  for (const [name, s] of Object.entries(scores)) {
+    if (s > bestScore) { bestScore = s; best = name; }
   }
   return bestScore >= 2 ? best : "Inbox";
 }
@@ -426,11 +516,19 @@ function render() {
 function toastFiled(item) {
   const t = document.getElementById("toast");
   const opts = S.cats.map(c =>
-    `<option value="${c.id}" ${c.id === item.cat ? "selected" : ""}>${esc(c.name)}</option>`).join("");
+    `<option value="${c.id}" ${c.id === item.cat ? "selected" : ""}>${esc(c.name)}</option>`).join("")
+    + `<option value="__new__">+ new list…</option>`;
   t.innerHTML = `filed under <b>${esc(catById(item.cat)?.name || "?")}</b>
     <select aria-label="move to category">${opts}</select>`;
   t.querySelector("select").addEventListener("change", (e) => {
-    moveItem(item.id, e.target.value);
+    let catId = e.target.value;
+    if (catId === "__new__") {
+      const name = prompt("New list name:");
+      if (!name || !name.trim()) { e.target.value = item.cat; return; }
+      catId = ensureCat(name).id;
+    }
+    moveItem(item.id, catId);
+    learn(item.text, catId);   // remember: these words belong there
     hideToast();
   });
   t.classList.add("show");
