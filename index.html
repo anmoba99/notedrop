@@ -25,89 +25,108 @@
   }
   button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
 
-  .app { display: grid; grid-template-columns: 230px 1fr; height: 100dvh; }
+  .app { display: flex; flex-direction: column; height: 100dvh;
+    max-width: 760px; margin: 0 auto; position: relative;
+    border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
 
-  /* ---------- sidebar ---------- */
-  aside {
-    border-right: 1px solid var(--line); padding: 1.2rem .9rem;
-    overflow-y: auto; background: var(--bg);
+  /* ---------- screens ---------- */
+  .screen { flex: 1; min-height: 0; display: none; flex-direction: column; }
+  .screen.on { display: flex; }
+  .lhead { display: flex; align-items: center; gap: .7rem;
+    padding: 1rem 1.3rem .8rem; border-bottom: 1px solid var(--line); flex: none; }
+  .lhead .back { font-size: 1.4rem; line-height: 1; color: var(--ink-dim); padding: 0 .2rem; display: none; }
+  .lhead .back.on { display: block; }
+  .lhead h2 { margin: 0; flex: 1; font-size: .98rem; color: var(--ink); font-weight: 600; }
+  .lhead .n { font-size: .72rem; color: var(--ink-faint); }
+
+  /* ---------- categories (Lists) screen ---------- */
+  .cats-body { flex: 1; min-height: 0; overflow-y: auto; padding: .9rem 1rem 1.4rem;
+    display: flex; flex-direction: column; }
+  .catfilter {
+    width: 100%; background: var(--bg-soft); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 10px; padding: .55rem .7rem; font: inherit; font-size: .9rem; outline: none;
+    margin-bottom: .8rem; flex: none;
   }
-  .brand { font-size: .8rem; letter-spacing: .18em; text-transform: uppercase;
-    color: var(--ink-dim); margin: 0 0 1.2rem .5rem; display: flex; align-items: center; gap: .5rem; }
-  .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
-  .catlist { display: flex; flex-direction: column; gap: 2px; }
+  .catfilter:focus { border-color: var(--accent); }
+  .catfilter::placeholder { color: var(--ink-faint); }
+  .catlist { display: flex; flex-direction: column; gap: 5px; }
+  .catlist .nomatch { color: var(--ink-faint); font-size: .84rem; padding: .8rem .3rem; }
   .cat {
-    display: flex; align-items: center; gap: .5rem; width: 100%;
-    padding: .45rem .55rem; border-radius: 8px; color: var(--ink-dim);
-    font-size: .86rem; text-align: left; position: relative;
+    display: flex; align-items: center; gap: .6rem; width: 100%;
+    padding: .8rem .85rem; border-radius: 12px; color: var(--ink); background: var(--bg-soft);
+    font-size: .96rem; text-align: left;
   }
-  .cat:hover { background: var(--bg-soft); color: var(--ink); }
-  .cat.active { background: var(--bg-soft); color: var(--ink); }
+  .cat:active { background: var(--line); }
+  .cat .emoji { font-size: 1.1rem; flex: none; }
   .cat .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .cat .count { font-size: .7rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
-  .cat .menu-btn { opacity: 0; font-size: .9rem; color: var(--ink-faint); padding: 0 .2rem; }
-  .cat:hover .menu-btn { opacity: 1; }
+  .cat .count { font-size: .78rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .cat .menu-btn { font-size: 1.05rem; color: var(--ink-faint); padding: 0 .3rem; flex: none; }
+  .cat .menu-btn:hover { color: var(--ink-dim); }
   .cat input.rename {
-    flex: 1; background: var(--bg-soft); border: 1px solid var(--line); color: var(--ink);
-    border-radius: 6px; padding: .1rem .35rem; font: inherit; font-size: .86rem; min-width: 0;
+    flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 6px; padding: .2rem .4rem; font: inherit; font-size: .95rem; min-width: 0;
   }
-  .sidefoot { margin-top: 1.4rem; border-top: 1px solid var(--line); padding-top: .8rem; }
-  .sidefoot button { display: block; width: 100%; text-align: left; padding: .4rem .55rem;
-    border-radius: 8px; color: var(--ink-faint); font-size: .78rem; }
-  .sidefoot button:hover { color: var(--ink-dim); background: var(--bg-soft); }
 
-  /* ---------- main ---------- */
-  main { display: flex; flex-direction: column; overflow: hidden; }
-  .drop {
-    padding: 3.2rem 2rem 1.6rem; display: grid; place-items: center;
-  }
-  .drop form { width: min(640px, 100%); position: relative; }
-  .drop input {
+  /* ---------- home / drop screen ---------- */
+  .drop-screen { align-items: center; justify-content: center; padding: 2rem 1.4rem; }
+  .drop-inner { width: min(560px, 100%); }
+  .drop-inner .tagline { text-align: center; color: var(--ink-faint); font-size: .72rem;
+    letter-spacing: .2em; text-transform: uppercase; margin: 0 0 1.6rem;
+    display: flex; align-items: center; justify-content: center; gap: .45rem; }
+  .drop-inner form { position: relative; }
+  .drop-inner input {
     width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--line);
-    color: var(--ink); font-size: 1.35rem; padding: .6rem .2rem .8rem;
+    color: var(--ink); font-size: 1.5rem; padding: .6rem .2rem .8rem; text-align: center;
     outline: none; caret-color: var(--accent);
   }
-  .drop input::placeholder { color: var(--ink-faint); }
-  .drop input:focus { border-bottom-color: var(--ink-dim); }
-  .drop .hint { position: absolute; right: .2rem; top: 100%; margin-top: .5rem;
+  .drop-inner input::placeholder { color: var(--ink-faint); }
+  .drop-inner input:focus { border-bottom-color: var(--accent); }
+  .drop-inner .hint { display: block; text-align: center; margin-top: .9rem;
     font-size: .68rem; color: var(--ink-faint); }
+  .gear { position: absolute; top: .9rem; right: 1rem; font-size: 1.15rem;
+    color: var(--ink-faint); padding: .2rem .35rem; }
+  .gear:hover { color: var(--ink-dim); }
 
-  .viewhead { padding: .4rem 2rem .6rem; max-width: 720px; width: 100%; margin: 0 auto;
-    display: flex; align-items: baseline; gap: .8rem; }
-  .viewhead h2 { margin: 0; font-size: .8rem; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--ink-dim); font-weight: 500; }
-  .viewhead .n { font-size: .7rem; color: var(--ink-faint); }
-
-  .items { flex: 1; overflow-y: auto; padding: 0 2rem 3rem; }
-  .items-inner { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; }
+  /* ---------- notes list ---------- */
+  .items { flex: 1; overflow-y: auto; padding: .4rem 1.3rem 1.4rem; }
+  .items-inner { display: flex; flex-direction: column; }
   .item {
-    display: flex; align-items: center; gap: .8rem; padding: .7rem .2rem;
+    display: flex; align-items: center; gap: .7rem; padding: .8rem .1rem;
     border-bottom: 1px solid var(--line);
   }
   .item .check {
-    width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--ink-faint);
+    width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--ink-faint);
     flex: none; display: grid; place-items: center; transition: all .15s;
   }
-  .item .check:hover { border-color: var(--accent); }
+  .item .check:active { border-color: var(--accent); }
   .item.done .check { background: var(--accent); border-color: var(--accent); }
-  .item.done .check::after { content: "✓"; font-size: .7rem; color: #000; }
-  .item .text { flex: 1; font-size: .95rem; overflow-wrap: anywhere; }
+  .item.done .check::after { content: "✓"; font-size: .72rem; color: #041018; }
+  .item .emoji { flex: none; font-size: 1.1rem; }
+  .item .text { flex: 1; font-size: .98rem; overflow-wrap: anywhere; }
   .item.done .text { color: var(--ink-faint); text-decoration: line-through; }
-  .item .tag { font-size: .66rem; color: var(--ink-faint); border: 1px solid var(--line);
-    border-radius: 999px; padding: .1rem .55rem; white-space: nowrap; cursor: pointer; }
-  .item .tag:hover { color: var(--ink-dim); border-color: var(--ink-faint); }
-  .item .del { opacity: 0; color: var(--ink-faint); font-size: 1rem; padding: 0 .2rem; }
-  .item:hover .del { opacity: 1; }
-  .item .del:hover { color: #c66; }
-  .empty { color: var(--ink-faint); font-size: .85rem; text-align: center; padding: 3rem 0; }
+  .item .tag { font-size: .68rem; color: var(--ink-faint); border: 1px solid var(--line);
+    border-radius: 999px; padding: .12rem .55rem; white-space: nowrap; cursor: pointer; flex: none; }
+  .item .tag:active { color: var(--ink-dim); border-color: var(--ink-faint); }
+  .item .del { color: var(--ink-faint); font-size: 1.25rem; padding: 0 .3rem; flex: none; }
+  .item .del:active { color: #e0748a; }
+  .empty { color: var(--ink-faint); font-size: .9rem; text-align: center; padding: 3rem 1rem; }
+
+  /* ---------- bottom nav ---------- */
+  .bottomnav { display: flex; border-top: 1px solid var(--line); background: var(--bg);
+    padding-bottom: env(safe-area-inset-bottom); flex: none; }
+  .bottomnav button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: .18rem;
+    padding: .55rem 0 .6rem; color: var(--ink-faint); font-size: .6rem; letter-spacing: .1em;
+    text-transform: uppercase; }
+  .bottomnav button .ic { font-size: 1.3rem; line-height: 1; }
+  .bottomnav button.active { color: var(--accent); }
 
   /* ---------- toast ---------- */
   #toast {
-    position: fixed; bottom: 1.4rem; left: 50%; transform: translate(-50%, 8px);
+    position: fixed; bottom: 4.6rem; left: 50%; transform: translate(-50%, 8px);
     background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px;
     padding: .55rem .9rem; font-size: .8rem; color: var(--ink-dim);
     display: flex; align-items: center; gap: .6rem; opacity: 0; pointer-events: none;
-    transition: opacity .25s, transform .25s; max-width: 90vw;
+    transition: opacity .25s, transform .25s; max-width: 90vw; z-index: 50;
   }
   #toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
   #toast b { color: var(--ink); font-weight: 600; }
@@ -118,9 +137,9 @@
 
   /* ---------- popover menu ---------- */
   #pop {
-    position: fixed; z-index: 30; background: var(--bg-soft); border: 1px solid var(--line);
-    border-radius: 10px; padding: .3rem; min-width: 160px; display: none;
-    box-shadow: 0 10px 30px rgba(0,0,0,.6); font-size: .82rem;
+    position: fixed; background: var(--bg-soft); border: 1px solid var(--line);
+    border-radius: 10px; padding: .3rem; min-width: 170px; display: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,.6); font-size: .85rem; z-index: 60;
   }
   #pop button, #pop select { display: block; width: 100%; text-align: left; padding: .45rem .6rem;
     border-radius: 7px; color: var(--ink-dim); }
@@ -133,12 +152,12 @@
   /* ---------- settings modal ---------- */
   #settings {
     position: fixed; inset: 0; background: rgba(0,0,0,.7); display: none;
-    place-items: center; z-index: 40;
+    place-items: center; z-index: 70; padding: 1rem;
   }
   #settings.open { display: grid; }
   #settings .box {
     background: var(--bg-soft); border: 1px solid var(--line); border-radius: 14px;
-    padding: 1.4rem; width: min(420px, 92vw);
+    padding: 1.4rem; width: min(420px, 100%);
   }
   #settings h3 { margin: 0 0 .3rem; font-size: .95rem; }
   #settings p { font-size: .76rem; color: var(--ink-dim); margin: .3rem 0 .9rem; }
@@ -152,43 +171,46 @@
   #settings .row .primary { background: var(--accent); color: #000; }
 
   /* ---------- mobile ---------- */
-  @media (max-width: 640px) {
-    .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-    aside { border-right: none; border-bottom: 1px solid var(--line);
-      padding: .7rem .8rem; overflow-x: auto; }
-    .brand { display: none; }
-    .catlist { flex-direction: row; }
-    .cat { white-space: nowrap; }
-    .cat .menu-btn { display: none; }
-    .sidefoot { display: none; }
-    .drop { padding: 1.6rem 1.2rem 1rem; }
-    .items { padding: 0 1.2rem 2rem; }
-    .viewhead { padding: .3rem 1.2rem .5rem; }
+  @media (max-width: 760px) {
+    .app { border-left: none; border-right: none; }
   }
 </style>
 </head>
 <body>
 <div class="app">
-  <aside>
-    <p class="brand"><span class="dot"></span>notedrop</p>
-    <nav class="catlist" id="catlist"></nav>
-    <div class="sidefoot">
-      <button id="open-settings">settings</button>
-    </div>
-  </aside>
-
-  <main>
-    <div class="drop">
+  <section class="screen drop-screen on" id="screen-drop">
+    <button class="gear" id="open-settings" aria-label="settings">⚙</button>
+    <div class="drop-inner">
+      <p class="tagline"><span aria-hidden="true">🌊</span> notedrop</p>
       <form id="dropform" autocomplete="off">
         <input id="dropinput" type="text" placeholder="drop a note…" maxlength="300" autofocus>
         <span class="hint" id="drophint">enter to file</span>
       </form>
     </div>
-    <div class="viewhead">
-      <h2 id="viewtitle">All</h2><span class="n" id="viewcount"></span>
-    </div>
+  </section>
+
+  <section class="screen list-screen" id="screen-list">
+    <header class="lhead">
+      <button class="back" id="listback" aria-label="back to lists">‹</button>
+      <h2 id="viewtitle">All notes</h2>
+      <span class="n" id="viewcount"></span>
+    </header>
     <div class="items"><div class="items-inner" id="itemlist"></div></div>
-  </main>
+  </section>
+
+  <section class="screen cats-screen" id="screen-cats">
+    <header class="lhead"><h2>Lists</h2><span class="n" id="catcount"></span></header>
+    <div class="cats-body">
+      <input class="catfilter" id="catfilter" type="text" placeholder="filter lists…" autocomplete="off">
+      <nav class="catlist" id="catlist"></nav>
+    </div>
+  </section>
+
+  <nav class="bottomnav" id="bottomnav">
+    <button data-nav="drop" class="active"><span class="ic" aria-hidden="true">✏️</span>Drop</button>
+    <button data-nav="all"><span class="ic" aria-hidden="true">🗒️</span>All</button>
+    <button data-nav="cats"><span class="ic" aria-hidden="true">🗂️</span>Lists</button>
+  </nav>
 </div>
 
 <div id="toast"></div>
@@ -220,8 +242,17 @@ const defaultState = () => ({
   learned: {},   // stem -> { "Category Name": count } — built from user corrections
 });
 let S = load();
-let view = "all"; // "all" | catId
+let view = "all";        // "all" | catId  (which notes the list screen shows)
+let screen = "drop";     // "drop" | "list" | "cats"
+let catFilter = "";
 let toastTimer = null;
+
+function go(scr, v) {
+  screen = scr;
+  if (v !== undefined) view = v;
+  render();
+  if (scr === "drop") { const di = document.getElementById("dropinput"); if (di) di.focus(); }
+}
 
 function load() {
   try {
@@ -432,6 +463,39 @@ async function classify(text) {
   return localClassify(text);
 }
 
+/* ---------- emoji flair ----------
+   Give notes a little color: a matching emoji when a keyword hits, otherwise
+   the note's category emoji. Some notes get none — that's fine. */
+const CAT_EMOJI = {
+  "Shopping": "🛒", "Work": "💼", "Calls & Messages": "📞", "Finance": "💰",
+  "Travel": "✈️", "Ideas": "💡", "Errands": "🚗", "Health": "🩺", "Home": "🏠",
+};
+const EMOJI_WORDS_RAW = {
+  "🍊": ["orange","fruit"], "🍎": ["apple"], "🍌": ["banana"], "🍇": ["grape"],
+  "🥛": ["milk"], "🍞": ["bread"], "🥚": ["egg"], "🧀": ["cheese"], "☕": ["coffee"],
+  "🍵": ["tea"], "🍷": ["wine"], "🍺": ["beer"], "💧": ["water"], "🍗": ["chicken"],
+  "🐟": ["fish","salmon","tuna"], "🍚": ["rice"], "🍝": ["pasta"], "🥗": ["salad","lettuce"],
+  "🎁": ["gift","present"], "🎂": ["cake","birthday"], "🎉": ["party"],
+  "✈️": ["flight","fly"], "🏨": ["hotel"], "🚆": ["train"], "🎫": ["ticket"], "🧳": ["luggage","suitcase","pack"],
+  "🚗": ["car","drive"], "⛽": ["gas","fuel"], "🅿️": ["parking"],
+  "🏋️": ["gym","workout","exercise"], "🏃": ["run","running"], "🧘": ["yoga","meditate"],
+  "🩺": ["doctor","checkup"], "🦷": ["dentist"], "💊": ["medication","pill","prescription","vitamins"],
+  "📚": ["book","read"], "💡": ["idea"], "✉️": ["email"], "📞": ["call","phone"], "💬": ["text","message","whatsapp"],
+  "📅": ["meeting","appointment","calendar"], "💰": ["money","salary","budget","pay"], "🧾": ["bill","tax","invoice","receipt"],
+  "🏠": ["rent","home","house"], "🧹": ["clean","vacuum"], "🧺": ["laundry"], "🍽️": ["dishes"],
+  "🪴": ["plant","plants","garden"], "😴": ["sleep","nap"], "🎵": ["music","song","playlist"],
+  "🎬": ["movie","film","watch"], "🎮": ["game"], "💻": ["code","coding","website"], "🐛": ["bug"],
+  "🐶": ["dog"], "🐱": ["cat"], "💇": ["haircut","barber"], "📦": ["package","parcel","delivery"],
+};
+const EMOJI_STEMMED = {};
+for (const [emo, words] of Object.entries(EMOJI_WORDS_RAW))
+  for (const w of words) EMOJI_STEMMED[stem(w)] = emo;
+
+function pickEmoji(text, catName) {
+  for (const w of tokenize(text)) if (EMOJI_STEMMED[w]) return EMOJI_STEMMED[w];
+  return CAT_EMOJI[catName] || "";
+}
+
 /* ---------- actions ---------- */
 async function addNote(text) {
   const item = { id: uid(), text, cat: "inbox", done: false, ts: Date.now() };
@@ -441,6 +505,7 @@ async function addNote(text) {
   const name = await classify(text);
   const cat = ensureCat(name);
   item.cat = cat.id;
+  item.emoji = pickEmoji(text, cat.name);
   save(); render();
   hint.textContent = "enter to file";
   toastFiled(item);
@@ -484,42 +549,54 @@ function deleteCat(id) {
 const esc = (s) => s.replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
 
 function render() {
-  // sidebar
+  // which screen is visible
+  document.getElementById("screen-drop").classList.toggle("on", screen === "drop");
+  document.getElementById("screen-list").classList.toggle("on", screen === "list");
+  document.getElementById("screen-cats").classList.toggle("on", screen === "cats");
+  const navActive = screen === "drop" ? "drop"
+    : (screen === "list" && view === "all") ? "all" : "cats";
+  for (const b of document.querySelectorAll("#bottomnav button"))
+    b.classList.toggle("active", b.dataset.nav === navActive);
+
   const counts = {};
   for (const it of S.items) counts[it.cat] = (counts[it.cat] || 0) + (it.done ? 0 : 1);
-  const cl = document.getElementById("catlist");
-  const catBtn = (id, name, count, extra = "") =>
-    `<button class="cat ${view === id ? "active" : ""}" data-view="${id}">
-       <span class="name">${esc(name)}</span>
-       <span class="count">${count || ""}</span>${extra}
-     </button>`;
-  let html = catBtn("all", "All", S.items.filter(i => !i.done).length);
-  for (const c of S.cats) {
-    const menu = c.id === "inbox" ? "" : `<span class="menu-btn" data-menu="${c.id}">⋯</span>`;
-    html += catBtn(c.id, c.name, counts[c.id] || 0, menu);
-  }
-  cl.innerHTML = html;
 
-  // main list
-  const title = view === "all" ? "All" : (catById(view)?.name || "All");
-  document.getElementById("viewtitle").textContent = title;
+  // categories (Lists) screen
+  const q = catFilter.trim().toLowerCase();
+  const shown = S.cats.filter(c => !q || c.name.toLowerCase().includes(q));
+  document.getElementById("catlist").innerHTML = shown.length
+    ? shown.map(c => {
+        const menu = c.id === "inbox" ? "" : `<span class="menu-btn" data-menu="${c.id}">⋯</span>`;
+        const emo = CAT_EMOJI[c.name] || "";
+        return `<button class="cat" data-view="${c.id}">
+          ${emo ? `<span class="emoji" aria-hidden="true">${emo}</span>` : ""}
+          <span class="name">${esc(c.name)}</span>
+          <span class="count">${counts[c.id] || ""}</span>${menu}
+        </button>`;
+      }).join("")
+    : `<p class="nomatch">no lists match “${esc(catFilter)}”</p>`;
+  document.getElementById("catcount").textContent = S.cats.length;
+
+  // notes list screen
+  document.getElementById("viewtitle").textContent =
+    view === "all" ? "All notes" : (catById(view)?.name || "All notes");
+  document.getElementById("listback").classList.toggle("on", view !== "all");
   const items = S.items
     .filter(i => view === "all" || i.cat === view)
     .sort((a, b) => (a.done - b.done) || (b.ts - a.ts));
   document.getElementById("viewcount").textContent =
     items.length ? `${items.filter(i => !i.done).length} open` : "";
   const il = document.getElementById("itemlist");
-  if (!items.length) {
-    il.innerHTML = `<p class="empty">${view === "all" ? "nothing here yet — drop a note above" : "empty"}</p>`;
-    return;
-  }
-  il.innerHTML = items.map(i => `
-    <div class="item ${i.done ? "done" : ""}" data-id="${i.id}">
-      <button class="check" data-act="toggle" aria-label="toggle done"></button>
-      <span class="text">${esc(i.text)}</span>
-      ${view === "all" ? `<button class="tag" data-act="viewcat">${esc(catById(i.cat)?.name || "?")}</button>` : ""}
-      <button class="del" data-act="del" aria-label="delete">×</button>
-    </div>`).join("");
+  il.innerHTML = items.length
+    ? items.map(i => `
+      <div class="item ${i.done ? "done" : ""}" data-id="${i.id}">
+        <button class="check" data-act="toggle" aria-label="toggle done"></button>
+        ${i.emoji ? `<span class="emoji" aria-hidden="true">${i.emoji}</span>` : ""}
+        <span class="text">${esc(i.text)}</span>
+        ${view === "all" ? `<button class="tag" data-act="viewcat">${esc(catById(i.cat)?.name || "?")}</button>` : ""}
+        <button class="del" data-act="del" aria-label="delete">×</button>
+      </div>`).join("")
+    : `<p class="empty">${view === "all" ? "no notes yet — drop one from the home screen" : "empty"}</p>`;
 }
 
 /* ---------- toast ---------- */
@@ -592,15 +669,24 @@ document.getElementById("dropform").addEventListener("submit", (e) => {
   addNote(text);
 });
 
+document.getElementById("bottomnav").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-nav]"); if (!b) return;
+  if (b.dataset.nav === "drop") go("drop");
+  else if (b.dataset.nav === "all") go("list", "all");
+  else if (b.dataset.nav === "cats") go("cats");
+});
+document.getElementById("listback").addEventListener("click", () => go("cats"));
+document.getElementById("catfilter").addEventListener("input", (e) => { catFilter = e.target.value; render(); });
+
 document.getElementById("catlist").addEventListener("click", (e) => {
   const menu = e.target.closest("[data-menu]");
   if (menu) { e.stopPropagation(); openMenu(menu.dataset.menu, e.clientX, e.clientY); return; }
   const btn = e.target.closest("[data-view]");
-  if (btn) { view = btn.dataset.view; render(); }
+  if (btn) go("list", btn.dataset.view);
 });
 document.getElementById("catlist").addEventListener("dblclick", (e) => {
   const btn = e.target.closest("[data-view]");
-  if (btn && btn.dataset.view !== "all" && btn.dataset.view !== "inbox") startRename(btn.dataset.view);
+  if (btn && btn.dataset.view !== "inbox") startRename(btn.dataset.view);
 });
 
 document.getElementById("itemlist").addEventListener("click", (e) => {
@@ -609,7 +695,7 @@ document.getElementById("itemlist").addEventListener("click", (e) => {
   const id = row.dataset.id;
   if (act === "toggle") toggleDone(id);
   else if (act === "del") deleteItem(id);
-  else if (act === "viewcat") { view = S.items.find(i => i.id === id)?.cat || "all"; render(); }
+  else if (act === "viewcat") go("list", S.items.find(i => i.id === id)?.cat || "all");
 });
 
 document.getElementById("pop").addEventListener("click", (e) => {
@@ -626,6 +712,9 @@ document.getElementById("pop").addEventListener("change", (e) => {
 });
 document.addEventListener("click", (e) => {
   if (!e.target.closest("#pop") && !e.target.closest("[data-menu]")) closeMenu();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { closeMenu(); settings.classList.remove("open"); }
 });
 
 /* settings */
