@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>notedrop</title>
-<meta name="description" content="A black page. Drop a note. It files itself.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='black'/><circle cx='50' cy='50' r='14' fill='white'/></svg>">
+<meta name="description" content="An ocean-blue page. Drop a note. It files itself.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2308192b'/><circle cx='50' cy='50' r='14' fill='%2334c3f0'/></svg>">
 <style>
   :root {
-    --bg: #000;
-    --bg-soft: #0d0d0d;
-    --line: #1e1e1e;
-    --ink: #f2f2f2;
-    --ink-dim: #8a8a8a;
-    --ink-faint: #4a4a4a;
-    --accent: #e8e4d8;
+    --bg: #08192b;
+    --bg-soft: #0e2439;
+    --line: #1d3b56;
+    --ink: #e6f2fb;
+    --ink-dim: #86b0d0;
+    --ink-faint: #47698c;
+    --accent: #34c3f0;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
@@ -124,7 +124,7 @@
   }
   #pop button, #pop select { display: block; width: 100%; text-align: left; padding: .45rem .6rem;
     border-radius: 7px; color: var(--ink-dim); }
-  #pop button:hover { background: #161616; color: var(--ink); }
+  #pop button:hover { background: #12283c; color: var(--ink); }
   #pop .danger:hover { color: #c66; }
   #pop select { background: var(--bg); border: 1px solid var(--line); margin-top: .2rem;
     font-size: .78rem; }
@@ -238,6 +238,16 @@ function ensureCat(name) {
   let c = catByName(name);
   if (!c) { c = { id: uid(), name: name.trim() }; S.cats.push(c); }
   return c;
+}
+/* Dynamic categories: a category only exists while it holds notes.
+   Once its last note leaves (re-filed or deleted), the category is removed.
+   Inbox is permanent. Returns true if anything was pruned. */
+function pruneEmptyCats() {
+  const used = new Set(S.items.map(i => i.cat));
+  const before = S.cats.length;
+  S.cats = S.cats.filter(c => c.id === "inbox" || used.has(c.id));
+  if (view !== "all" && !catById(view)) view = "all";
+  return S.cats.length !== before;
 }
 
 /* ---------- classification ---------- */
@@ -441,11 +451,11 @@ function toggleDone(id) {
   if (it) { it.done = !it.done; save(); render(); }
 }
 function deleteItem(id) {
-  S.items = S.items.filter(i => i.id !== id); save(); render();
+  S.items = S.items.filter(i => i.id !== id); pruneEmptyCats(); save(); render();
 }
 function moveItem(id, catId) {
   const it = S.items.find(i => i.id === id);
-  if (it) { it.cat = catId; save(); render(); }
+  if (it) { it.cat = catId; pruneEmptyCats(); save(); render(); }
 }
 function renameCat(id, name) {
   const c = catById(id);

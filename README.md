@@ -1,6 +1,6 @@
 # notedrop
 
-A black page. Drop a note. It files itself.
+An ocean-blue page. Drop a note. It files itself.
 
 **Live app:** https://anmoba99.github.io/notedrop/
 
